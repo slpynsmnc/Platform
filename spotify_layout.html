@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify-like App - Dark Mode Ungu</title>
+    <!-- Memuat ikon Font Awesome untuk simbol (panah, kunci, folder) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+    
+    <!-- MEMUAT FONT BASKERVILLE DARI GOOGLE FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;1,400;1,700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Variabel Warna Dark Mode Ungu --- */
+        :root {
+            --color-bg-primary: #121212; /* Hampir hitam (Latar belakang utama) */
+            --color-bg-secondary: #1e1e1e; /* Warna Sidebar dan elemen */
+            --color-bg-card: #282828; /* Latar belakang kartu gelap */
+            --color-text-primary: #ffffff; /* Teks putih */
+            --color-text-secondary: #b3b3b3; /* Teks abu-abu */
+            --color-accent: #BB86FC; /* [REVISI WARNA] Ungu Terang (Violet, seperti semula) */
+            --color-accent-dark: #6200EE; /* [REVISI WARNA] Violet lebih gelap */
+            --color-spotify-green: #1DB954; /* Hijau Spotify untuk tombol interaktif */
+            --sidebar-width: 250px;
+        }
+
+        /* RESET DAN DASAR */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Libre Baskerville', serif;
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            /* [FIX] Izinkan scrolling hanya pada konten utama, bukan pada body */
+            overflow: hidden; 
+        }
+
+        /* --- LAYAR LOGIN / WELCOME --- */
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            
+            /* [FIX PENTING] Pastikan ini fullscreen dan tidak terpotong */
+            position: fixed; 
+            top: 0;
+            left: 0;
+            width: 100vw; /* Lebar penuh viewport */
+            height: 100vh; /* Tinggi penuh viewport */
+            z-index: 9999; /* Pastikan selalu di atas elemen lain */
+
+            /* [BACKGROUND GIF] */
+            background-image: url('background.gif'); /* Ganti 'background.gif' dengan nama file GIF Anda */
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            position: relative; /* Untuk pseudo-element overlay */
+            opacity: 1; /* Default visible */
+            transition: opacity 0.5s;
+        }
+        
+        /* Tambahkan overlay gelap di atas GIF agar teks tetap terbaca */
+        #login-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5); /* Overlay hitam transparan 50% */
+            z-index: 1; /* Pastikan di bawah kotak login, di atas GIF */
+        }
+
+        /* Pastikan elemen login-box berada di atas overlay */
+        .login-box {
+            position: relative;
+            z-index: 2; /* Pastikan di atas overlay */
+            
+            /* [FIX] Warna hitam 'classy' untuk background kotak login */
+            /* Menggunakan warna abu-abu gelap kehitaman secondary dengan transparansi */
+            background-color: rgba(30, 30, 30, 0.9); 
+            
+            padding: 40px 80px; 
+            /* Mengubah bentuk kotak login menjadi elips (oval) yang lebih panjang */
+            border-radius: 50px / 100px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            border: 1px solid var(--color-accent-dark);
+            min-width: 450px; /* Diperpanjang */
+        }
+
+        .login-box h2 {
+            color: var(--color-accent);
+            margin-bottom: 25px;
+        }
+
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid var(--color-accent);
+            background-color: var(--color-bg-primary); /* Warna input tetap hitam pekat agar kontras */
+            color: var(--color-text-primary);
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .login-box input[type="password"]:focus {
+            border-color: var(--color-text-primary);
+        }
+
+        .login-box button {
+            background-color: var(--color-accent);
+            color: var(--color-bg-secondary);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .login-box button:hover {
+            background-color: var(--color-accent-dark);
+            transform: translateY(-1px);
+        }
+
+        #error-message {
+            color: #ff4d4d;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+        
+        /* --- LAYAR APLIKASI UTAMA --- */
+        #app {
+            display: flex;
+            height: 100vh;
+            width: 100%; 
+            position: relative; 
+            /* [FIX] Awalnya hidden agar tidak muncul saat login screen tampil */
+            visibility: hidden; 
+            opacity: 0;
+            /* Perubahan: Transisi yang lebih halus */
+            transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+        }
+        
+        /* Atur agar #app terlihat saat login screen disembunyikan */
+        #app.visible {
+            visibility: visible;
+            opacity: 1;
+            transition-delay: 0s;
+        }
+        
+        /* --- HOMEPAGE LAYOUT --- */
+        #home-screen {
+            display: flex;
+            width: 100%;
+        }
+        
+        /* --- SIDEBAR (Menu Vertikal Kiri) --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            /* [REVISI WARNA] Ganti ke hitam pekat (Primary BG) */
+            background-color: var(--color-bg-primary);
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+        }
+        
+        .sidebar-header {
+            color: var(--color-accent);
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Ukuran Font Sidebar Diperkecil */
+        .sidebar-item, .dropdown-menu .sidebar-item {
+            font-size: 0.9em; /* Font utama Sidebar diperkecil */
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-radius: 6px;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        
+        .sidebar-item:hover, .sidebar-item.active {
+            background-color: #333;
+            color: var(--color-text-primary);
+        }
+
+        /* Jarak antara Ikon dan Tulisan di Sidebar */
+        .sidebar-item i {
+            margin-right: 15px; 
+            width: 20px;
+            text-align: center;
+            font-family: 'Font Awesome 6 Free', sans-serif; 
+        }
+
+        /* Dropdown Styling */
+        .dropdown-toggle {
+            font-weight: bold;
+            color: var(--color-accent);
+            background-color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .dropdown-toggle i {
+            margin-left: auto; 
+            transition: transform 0.3s;
+            font-family: 'Font Awesome 6 Free', sans-serif;
+        }
+        
+        .dropdown-toggle.open i {
+            transform: rotate(90deg);
+        }
+
+        .dropdown-menu {
+            overflow: hidden;
+            max-height: 0; /* Awalnya tersembunyi */
+            transition: max-height 0.4s ease-out;
+            margin-left: 10px;
+        }
+        
+        .dropdown-menu.visible {
+            max-height: 500px; /* Nilai besar agar konten terlihat */
+            transition: max-height 0.4s ease-in;
+        }
+        
+        .dropdown-menu .sidebar-item {
+            padding-left: 30px; /* Indentasi submenu */
+            /* Font size sudah diatur di .sidebar-item di atas */
+        }
+        
+        /* --- KONTEN UTAMA (Main Content) --- */
+        #main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            background-color: var(--color-bg-primary);
+            position: relative; /* Untuk posisi sticky top-bar */
+        }
+        
+        /* ------------------------------------- */
+        /* STYLE LAYOUT UTAMA (TOP BAR & GRIDS) */
+        /* ------------------------------------- */
+        
+        .top-bar {
+            background-color: var(--color-bg-primary); 
+            padding: 20px 30px 10px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Tombol Navigasi History */
+        .nav-buttons i {
+            color: var(--color-text-secondary);
+            font-size: 1.2em;
+            margin-right: 15px;
+            cursor: pointer;
+            font-family: 'Font Awesome 6 Free', sans-serif;
+        }
+        
+        /* Style untuk tombol yang di-disable */
+        .nav-buttons i.disabled {
+            color: #444;
+            cursor: default;
+        }
+
+        /* Search Bar */
+        .search-bar-container {
+            position: relative; 
+            flex-grow: 1; 
+            max-width: 400px; 
+            margin: 0 auto; 
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: #333;
+            padding: 8px 15px;
+            border-radius: 30px;
+            width: 100%;
+        }
+
+        .search-bar i {
+            color: var(--color-text-secondary);
+            margin-right: 10px;
+            font-family: 'Font Awesome 6 Free', sans-serif;
+        }
+        
+        .search-bar input {
+            background: none;
+            border: none;
+            color: var(--color-text-primary);
+            width: 100%;
+            outline: none;
+        }
+
+        .search-results-dropdown {
+            position: absolute;
+            top: 100%; 
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: var(--color-bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            z-index: 20; 
+            display: none; 
+            margin-top: 5px;
+        }
+
+        .search-result-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            color: var(--color-text-primary);
+            transition: background-color 0.2s;
+            display: block;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .search-result-item:hover {
+            background-color: var(--color-accent-dark);
+        }
+        
+        /* --- PROFIL DROPDOWN KANAN ATAS --- */
+        .user-profile-container {
+            position: relative;
+        }
+
+        /* Tombol Profil (Gambar) */
+        .profile-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            display: block;
+        }
+
+        .profile-img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--color-accent);
+            box-shadow: 0 0 5px rgba(187, 134, 252, 0.5);
+            /* Placeholder image */
+            content: url('https://placehold.co/35x35/BB86FC/ffffff?text=J'); 
+        }
+
+        /* Menu Dropdown Profil */
+        #profile-dropdown {
+            position: absolute;
+            top: 100%; 
+            right: 0;
+            background-color: var(--color-bg-secondary);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            padding: 10px 0;
+            margin-top: 10px;
+            min-width: 150px;
+            z-index: 30;
+            display: none;
+        }
+
+        #profile-dropdown.open {
+            display: block;
+        }
+
+        #profile-dropdown a {
+            display: block;
+            padding: 10px 15px;
+            color: var(--color-text-primary);
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        #profile-dropdown a:hover {
+            background-color: #333;
+        }
+
+
+        /* ------------------------------------- */
+        /* STYLE HALAMAN MEDIUM-LIKE ARTICLE */
+        /* ------------------------------------- */
+        .page-content {
+            padding: 0 30px 30px;
+            max-width: 800px; 
+            margin: 0 auto;
+        }
+        
+        .article-header {
+            margin-bottom: 40px;
+        }
+        
+        .article-header h1 {
+            color: var(--color-accent);
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .article-header p {
+            color: var(--color-text-secondary);
+            font-style: italic;
+        }
+
+        .article-body img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .article-body p {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            color: var(--color-text-primary);
+            text-align: justify;
+        }
+        
+        .article-body blockquote {
+            border-left: 4px solid var(--color-accent);
+            margin: 30px 0;
+            padding-left: 20px;
+            font-style: italic;
+            color: var(--color-accent);
+        }
+
+        /* --- SPOTIFY EMBED PLAYER (Page 2) --- */
+        .spotify-embed-container {
+            margin: 30px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Custom MP3 Player Section Styling */
+        .mp3-player-container {
+            background-color: var(--color-bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 1px solid var(--color-accent-dark);
+        }
+
+        .mp3-player-container h3 {
+            color: var(--color-accent);
+            margin-bottom: 15px;
+        }
+
+        .mp3-player-container audio {
+            width: 100%;
+            /* [REVISI WARNA] Mengembalikan filter dasar (dark mode) */
+            filter: invert(1) hue-rotate(180deg);
+        }
+
+
+        /* ------------------------------------- */
+        /* HOMEPAGE SPOTIFY GRID STYLES (DIPERTAHANKAN) */
+        /* ------------------------------------- */
+        .hero-banner {
+            /* [FIX] Mengganti Gradient/Gambar Upload dengan FILE LOKAL */
+            background-image: url('hero_background.jpg'); 
+            background-size: cover;
+            /* [FIX] Mempertahankan rasio 16:9 (cropping dari bawah) */
+            background-position: top center; 
+            background-repeat: no-repeat;
+            
+            position: relative; 
+            
+            padding: 30px;
+            margin: 0 30px 30px;
+            border-radius: 10px;
+            /* Tinggi tetap 250px, yang menentukan rasio 16:9 relatif terhadap lebar kontainer */
+            height: 250px; 
+            display: flex;
+            align-items: flex-end; 
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* [BARU] Overlay gelap untuk memastikan teks terbaca di atas gambar terang */
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            /* Gradient dari bawah-kiri (paling gelap) ke kanan-atas (transparan) */
+            background: linear-gradient(to top right, rgba(0, 0, 0, 0.7), transparent 60%);
+            z-index: 1; 
+        }
+
+        .hero-content {
+            z-index: 2;
+        }
+
+        .hero-content h1 {
+            font-size: 2.5em;
+            color: var(--color-text-primary);
+        }
+
+        .hero-content p {
+            color: #ccc;
+            margin-top: 5px;
+        }
+        
+        /* Menghapus CSS yang tidak perlu untuk hero-banner img */
+        .hero-banner img {
+            display: none; 
+        }
+
+
+        /* Content Tabs */
+        .content-tabs {
+            margin: 0 30px 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .tab-button {
+            background-color: var(--color-bg-card);
+            color: var(--color-text-primary);
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            /* Memastikan tombol dapat diklik dan merespons */
+            cursor: pointer; 
+        }
+        
+        .tab-button.active {
+            background-color: var(--color-accent);
+            color: var(--color-bg-primary); 
+        }
+
+        .tab-button:hover:not(.active) {
+            background-color: #555;
+        }
+        
+        /* Content Sections */
+        .content-section {
+            padding: 0 30px 30px;
+        }
+        
+        .content-section h2 {
+            color: var(--color-text-primary);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        /* Card Grid General Style (Like New Music Friday) */
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 25px;
+        }
+        
+        .release-card {
+            background-color: var(--color-bg-secondary);
+            padding: 15px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .release-card:hover {
+            background-color: #333;
+        }
+        
+        .release-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            /* Placeholder image */
+            content: url('https://placehold.co/180x180/BB86FC/ffffff?text=ART');
+        }
+        
+        .release-card h3 {
+            font-size: 1em;
+            color: var(--color-text-primary);
+            margin-bottom: 3px;
+        }
+        
+        .release-card p {
+            color: var(--color-text-secondary);
+            font-size: 0.85em;
+        }
+        
+        /* MY COLLECTION ALBUM GRID */
+        .album-card {
+            background-color: var(--color-bg-card);
+            padding: 15px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .album-card:hover {
+            background-color: #333;
+        }
+
+        .album-card img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1; /* Pastikan selalu kotak */
+            border-radius: 4px;
+            margin-bottom: 10px;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            /* Ganti dengan URL foto Anda */
+            content: url('https://placehold.co/180x180/BB86FC/121212?text=FOTO+ANDA'); 
+        }
+
+        .album-card h3 {
+            font-size: 1.1em;
+            color: var(--color-accent);
+            margin-bottom: 3px;
+        }
+
+        .album-card p {
+            color: var(--color-text-secondary);
+            font-size: 0.9em;
+        }
+        
+        /* GALLERY GRID STYLE */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .gallery-item {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .gallery-item p {
+            font-size: 0.95em;
+            color: var(--color-text-secondary);
+            line-height: 1.4;
+            text-align: center;
+        }
+        
+        /* Style untuk Halaman Tab Konten */
+        .tab-page-content {
+            padding: 30px;
+        }
+
+        /* [STYLE BARU] Untuk List Rapi di Page 4 */
+        .shape-list p {
+            margin-bottom: 15px; 
+            padding-left: 10px;
+            border-left: 2px solid var(--color-accent-dark);
+        }
+        .shape-list ul {
+            margin-bottom: 25px;
+            margin-left: 20px;
+        }
+        .shape-list strong {
+            color: var(--color-accent);
+        }
+
+        /* [BOX BARU] Info Box di Homepage */
+        .info-box {
+            background-color: var(--color-bg-secondary);
+            border: 1px solid var(--color-accent-dark);
+            padding: 25px;
+            margin: 0 30px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .info-box h2 {
+            color: var(--color-accent);
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .info-box p {
+            font-size: 0.9em;
+            line-height: 1.4;
+            color: var(--color-text-secondary);
+        }
+
+
+    </style>
+</head>
+<body>
+    
+
+<div id="login-screen">
+        <div class="login-box">
+            <h2>Welcome to my Mindspace</h2>
+            <p>Enter the password (pst, it's "jiejie")</p> <!-- Ganti password --><br>
+            <i class="fas fa-lock" style="color: var(--color-accent); margin-bottom: 10px;"></i>
+            <input type="password" id="password-input" placeholder="Password">
+            <button onclick="login()">MASUK</button>
+            <p id="error-message">Error bruh, try again!</p>
+        </div>
+    </div>
+
+    <div id="app">
+        
+        
+
+<div id="home-screen">
+            
+            
+
+<div id="sidebar">
+                <div class="sidebar-header">
+                    <i class="fas fa-music"></i> Jie's Mindspace
+                </div>
+
+                
+
+<a href="#" id="home-menu-item" class="sidebar-item active" onclick="showPage('home', this)"><i class="fas fa-home"></i> Home</a>
+                <a href="#" class="sidebar-item" onclick="showPage('search-page', this)"><i class="fas fa-search"></i> Search</a>
+                <a href="#" class="sidebar-item" onclick="showPage('collection', this)"><i class="fas fa-layer-group"></i> My Collection</a>
+
+                <hr style="border-color: #333; margin: 10px 0;">
+
+                
+
+<div id="dropdown-parent" class="sidebar-item dropdown-toggle" onclick="toggleDropdown()">
+                    <i class="fas fa-angle-right" id="dropdown-icon"></i> UTS
+                </div>
+
+                <div id="dropdown-menu" class="dropdown-menu">
+                    
+
+<a href="#" class="sidebar-item" onclick="showPage('page1', this)"><i class="fas fa-folder-open"></i>All About Me</a>
+                    <a href="#" class="sidebar-item" onclick="showPage('page2', this)"><i class="fas fa-folder-open"></i>My Song for You</a>
+                    <a href="#" class="sidebar-item" onclick="showPage('page3', this)"><i class="fas fa-folder-open"></i>My Stories for You</a>
+                    <a href="#" class="sidebar-item" onclick="showPage('page4', this)"><i class="fas fa-folder-open"></i>My SHAPE</a>
+                    <a href="#" class="sidebar-item" onclick="showPage('page5', this)"><i class="fas fa-folder-open"></i>Personal Review</a>
+                </div>
+                
+                <hr style="border-color: #333; margin: 10px 0;">
+                
+            </div>
+
+            
+
+<div id="main-content">
+                
+                
+
+<div class="top-bar">
+                    <div class="nav-buttons">
+                        <i id="back-btn" class="fas fa-chevron-left disabled" onclick="goBack()"></i>
+                        <i id="forward-btn" class="fas fa-chevron-right disabled" onclick="goForward()"></i>
+                    </div>
+                    
+                    
+
+<div class="search-bar-container">
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-input" placeholder="wanna search sumthin'?" oninput="searchPages(this.value)">
+                        </div>
+                        
+
+<div id="search-results-dropdown" class="search-results-dropdown">
+                            <div class="search-history-label" style="padding: 5px 15px; color: var(--color-accent); font-weight: bold; font-size: 0.8em; border-bottom: 1px solid #333;">Riwayat Pencarian</div>
+                            
+
+<div id="history-container"></div>
+                        </div>
+                    </div>
+
+                    
+
+<div class="user-profile-container">
+                        <button class="profile-btn" onclick="toggleProfileDropdown()">
+                            
+
+<img src="profile_photo.jpg" alt="User Profile" class="profile-img">
+                        </button>
+                        
+                        
+
+<div id="profile-dropdown" class="profile-dropdown">
+                            <a href="https://open.spotify.com/user/i4fnbyptnhz6dvso7vayx4jes?si=93f5d27e011c46ad" target="_blank" onclick="toggleProfileDropdown(); return true;"><i class="fas fa-external-link-alt" style="margin-right: 10px;"></i> Account (Spotify)</a>
+                            <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt" style="margin-right: 10px;"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+<div id="content-container">
+
+                    
+
+<div id="home" class="content-page active">
+                         <div class="page-content" style="max-width: none; margin: 0;"> 
+                            
+
+<div class="hero-banner">
+                                <div class="hero-content">
+                                    <h1>My Highlights</h1>
+                                    <p>yeah, that's me.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- [PERUBAHAN] Menghubungkan Tab ke Halaman Baru --><div class="content-tabs">
+                                <a href="#" class="tab-button active" onclick="showPage('home', this); return false;">All</a>
+                                <a href="#" class="tab-button" onclick="showPage('laporan-page', this); return false;">Redacted</a>
+                                <a href="#" class="tab-button" onclick="showPage('arsip-page', this); return false;">Redacted</a>
+                            </div>
+
+                            <!-- [BOX BARU] Segmen Data Diri --><div class="info-box">
+                                <h2>If you wanna know me, well...</h2>
+                                <p><strong>Name:</strong> Herlambang Setiaji Prabowo</p>
+                                <p><strong>I usually go by Jie</strong></p>
+                                <p><strong>NIM:</strong> 18224113</p>
+                                <p style="margin-top: 10px;">My dm's open if you wanna know more.</p>
+                            </div>
+
+                            
+
+<div class="content-section">
+                                <h2>Your Activity</h2>
+                                <div class="section-grid">
+                                    <div class="release-card" style="text-align: left;">
+                                        <h3 style="color: var(--color-accent);">Redacted</h3>
+                                        <p>Redacted</p>
+                                    </div>
+                                    <div class="release-card" style="text-align: left;">
+                                        <h3 style="color: var(--color-accent);">Redacted</h3>
+                                        <p>Redacted</p>
+                                    </div>
+                                    <div class="release-card" style="text-align: left;">
+                                        <h3 style="color: var(--color-accent);">Redacted</h3>
+                                        <p>Redacted</p>
+                                    </div>
+                                    <div class="release-card" style="text-align: left;">
+                                        <h3 style="color: var(--color-accent);">Redacted</h3>
+                                        <p>Redacted</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SECTION 2: NEW RELEASE STYLE GRID (Mengakses Album Data) --><div class="content-section">
+                                <h2>My Recent Album</h2>
+                                <div id="new-releases-grid" class="section-grid">
+                                    <!-- Dynamic content will be loaded here by JavaScript --></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Halaman 1: Laporan A (Medium-like) --><div id="page1" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>All About Me</h1>
+                                <p>Published by Jie on December 2nd 2005</p>
+                            </div>
+                            <div class="article-body">
+                                <!-- [PERUBAHAN] Menggunakan file lokal yang dapat diedit --><img src="gambar_page1.jpg" alt="Gambar Tren Pasar">
+                                
+                                <!-- [REPOSISI TEXT] Kutipan dipindah sebelum paragraf pertama --><blockquote>
+                                    "ever since gpt has risen in popularity, i hate using the em dash. but it still won't stop me from using it."
+                                </blockquote>
+                                
+                                <p>In a world that spins a little too fast, there is someone who refuses to rush. That someone is me. I move through life not like a passenger on a train but like a wanderer on a long road, watching the clouds, tracing meaning in silence, and laughing at the absurdity of existence. I have learned that to be me is to live between contradictions: quiet yet expressive, reflective yet playful, serious yet amused by my own seriousness.</p>
+                                <p>My days are filled with small, chaotic beauties. The hum of a late-night thought, the rhythm of keys as I type, the way a random memory can unfold like a song I forgot I loved. Sometimes I exist in words, sometimes in music, and sometimes in a quiet that feels louder than sound. There are moments I disappear from the noise of the world, not because I am lost, but because I need to find something deeper—something that no conversation or trend can explain.</p>
+                                <p>And yet, life keeps demanding interaction. People come and go, their laughter echoing like faint bells in a fog. Social interaction, for me, is both an an art and a labyrinth. I walk through it with curiosity, though sometimes the walls close in. There are times I stand in a crowd and feel like an observer in my own play, analyzing every word, gesture, and glance, while pretending to be part of the rhythm. I am both the actor and the audience, never fully belonging, yet never fully apart.</p>
+                                <p>As for relationships—ah, that curious, tender absence. There is no grand romance written in my story yet, no great confession under the moon. It’s not sadness that fills the space, but a quiet fascination. I’ve loved in silence, in imagination, in all the ways that don’t require saying it out loud. I have built castles of emotion from glances, smiles, and what-ifs. And maybe that’s enough for now. Perhaps, like Dante gazing upon his Beatrice from a distance, I too am meant to love through the ache of admiration, to feel deeply without owning the feeling.</p>
+                                <p>Friendship, however, is my chosen warmth. I keep a circle small but real, where laughter feels unforced and silences are comfortable. My friends are constellations that light my map. They tease, challenge, and ground me, often without realizing how much they matter. Around them, my layers loosen. I am no longer the observer; I am the pulse of the moment, laughing until my ribs hurt, spilling thoughts that sound ridiculous and profound all at once.</p>
+                                <p>Still, solitude remains my oldest friend. When the world quiets down, I descend inward like Dante through the circles of my own mind. In the deepest layers, I find the rawest parts of myself: the fears I try to outgrow, the dreams I dare not name, the strange beauty of existing at all. It is there that I reconcile my contradictions and return, reborn each time, with new words and new wonder.</p>
+                                <p>So who am I, really? I am the storm and the calm after it. I am the question that answers itself only halfway. I am laughter breaking through melancholy, thought tangled in emotion, and emotion disguised as logic. I am both everything I’veshown and everything I’ve hidden.</p>
+                                <p>And maybe that’s what makes my story alive. It isn’t a tale of victories or heartbreaks. It’s a living symphony, shifting with every heartbeat, written in moments you’ll never fully see but somehow feel.</p>
+                                <p>All about me is all about becoming.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Halaman 2: Laporan B (Media/Audio) - Spotify Embed + MP3 Lokal --><div id="page2" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>My Song for You</h1>
+                                <p>JK wrote this, and I'm glad that he did.</p>
+                            </div>
+                            <div class="article-body">
+                                
+                                <!-- SEGMENT 1: SPOTIFY EMBED PLAYER (Preview 30 detik) --><div class="spotify-embed-container">
+                                    <iframe 
+                                        data-testid="embed-iframe" 
+                                        style="border-radius:12px" 
+                                        src="https://open.spotify.com/embed/track/0eFMbKCRw8KByXyWBw8WO7?utm_source=generator" 
+                                        width="100%" 
+                                        height="352" 
+                                        frameBorder="0" 
+                                        allowfullscreen="" 
+                                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                                        loading="lazy">
+                                    </iframe>
+                                </div>
+
+                                <p>
+                                    Still With You is (and will always be) my favorite lullaby
+                                    <strong style="color: var(--color-accent-dark);"><br>Still With You, huh?</strong>
+                                </p>
+
+                                <hr style="border-color: #333; margin: 30px 0;">
+
+                                <!-- SEGMENT 2: MP3 PLAYER LOKAL (Full Song) --><div class="mp3-player-container">
+                                    <h3>Still With You - JK</h3>
+                                    <p style="font-size: 0.9em; color: var(--color-text-secondary); margin-bottom: 15px;">
+                                        C'mon, play it!
+                                    </p>
+                                    <!-- [PENTING] Ganti 'nama_file_anda.mp3' dengan nama file audio lokal Anda --><audio controls>
+                                        <source src="nama_file_anda.mp3" type="audio/mp3">
+                                        hahah, not supported.
+                                    </audio>
+                                </div>
+                                
+                                <p>
+                                    <!-- [PERUBAHAN TEKS PAGE 2] -->[Intro]<br>
+                                    Your faint voice brushes past me<br>
+                                    Please call my name just one more time<br>
+                                    Though I'm standing still beneath the frozen sunset<br>
+                                    I'll take one step at a time toward you<br>
+                                    Still with you<br><br>
+
+                                    [Verse 1]<br>
+                                    A dark room with no light<br>
+                                    I shouldn't get used to it<br>
+                                    But I'm used to it again<br>
+                                    The low-pitched sound of the air conditioner<br>
+                                    If I don't have this, I might just fall apart<br><br>
+
+                                    [Pre-Chorus 1]<br>
+                                    We laugh together, we cry together<br>
+                                    These simple feelings were everything I had<br>
+                                    When will it be?<br>
+                                    If I see you again<br>
+                                    I will look into your eyes<br>
+                                    And say, "I missed you"<br><br>
+
+                                    [Chorus]<br>
+                                    In a rapturous memory<br>
+                                    The rain pours even when I dance alone<br>
+                                    By the time this mist clears<br>
+                                    I'll run with my feet wet<br>
+                                    So hold me then<br><br>
+
+                                    [Verse 2]<br>
+                                    The moon looks lonely<br>
+                                    Like it's crying in the bright night sky<br>
+                                    Even though I always know the morning will come<br>
+                                    I want to stay in your sky like a star<br><br>
+
+                                    [Pre-Chorus 2]<br>
+                                    Every day, every moment<br>
+                                    If I knew this was gonna happen<br>
+                                    I would've cherished those moments more<br>
+                                    When will it be?<br>
+                                    If I see you again<br>
+                                    I will look into your eyes<br>
+                                    And say, "I missed you"<br><br>
+
+                                    [Chorus]<br>
+                                    In a rapturous memory<br>
+                                    The rain pours even when I dance alone<br>
+                                    By the time this mist clears<br>
+                                    I'll run with my feet wet<br>
+                                    So hold me then<br><br>
+
+                                    [Outro]<br>
+                                    Behind the faint smile that looked at me<br>
+                                    I will draw a beautiful purple shade<br>
+                                    Though our footsteps may be out of step<br>
+                                    I want to walk this path with you<br>
+                                    Still with you
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Halaman 3: Laporan C (Medium-like) --><div id="page3" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>My Stories for You</h1>
+                                <p>Written in the style of Dante's Inferno. | Versi 1.1</p>
+                            </div>
+                            <div class="article-body">
+                                <!-- [PERUBAHAN] Menggunakan file lokal yang dapat diedit --><img src="gambar_page3.jpg" alt="Gambar Alur Kerja">
+                                <p>
+                                    <!-- [PERUBAHAN TEKS PAGE 3] -->There came a night when the silence grew heavy enough to echo. I found myself standing at the threshold of my own mind, where shadows curled like smoke and memories flickered like dying stars. It was not despair that led me there, but curiosity—the need to understand what burns quietly beneath my calm. For every laughter I share, every thought I hide, there is a flame that never sleeps.
+                                </p>
+                                <p>
+                                    I began my descent.
+                                </p>
+                                <p>
+                                    In the first circle, I met Doubt, a pale figure with my own face. He whispered every question I had ever buried: Am I enough? Am I real? Will the world ever see me as I am, not as I perform? His voice wasn’t cruel, only familiar. I lingered there too long, warmed by uncertainty as if it were a friend. Doubt, I learned, doesn’t destroy—it seduces.
+                                </p>
+                                <p>
+                                    In the second circle, I found Desire, restless and golden. It had no body, only light, shifting into forms of what I longed for but never had. It showed me faces I admired, hands I never held, laughter that belonged to someone else. It was beautiful, and it hurt. I reached for it, and it vanished like smoke. The ache remained, soft but eternal, reminding me that love, to me, has always been more idea than event—more poem than person.
+                                </p>
+                                <p>
+                                    The third circle belonged to Silence. At first, it seemed peaceful—a sanctuary of thought. But as I wandered deeper, I realized silence has layers. Some are gentle, made for healing; others are sharp, cutting between me and the world. I saw all the words I never said, floating in the air like ghosts. They asked me why I buried them. I had no answer. Silence smiled and said, Because you feared being misunderstood. And perhaps that was true.
+                                </p>
+                                <p>
+                                    Beyond that, I met Time. He did not walk; he drifted. His face was unreadable, his hands always moving. Around him lay the fragments of my days—projects unfinished, promises postponed, dreams marked “later.” Time didn’t scold me; he only looked. His eyes held every moment I had wasted waiting for the right one. And in that look, I felt both the cruelty and mercy of existence.
+                                </p>
+                                <p>
+                                    Finally, in the deepest circle, there was Me. Not the version I present to others, but the raw, unfiltered pulse beneath it all. I stood before myself as one stands before an old friend and an ancient fear. There were no flames, no torment, only stillness—the kind that hums with truth. I realized then that my inferno was never punishment. It was revelation. Every doubt, desire, silence, and delay was not a sin, but a signpost. Every fire within me burned not to destroy, but to illuminate.
+                                </p>
+                                <p>
+                                    When I rose from that inner descent, I carried with me a quiet clarity. I no longer sought to be unscarred; I sought to be real. I no longer wished to escape the labyrinth; I wanted to learn its walls, trace them, name them, and make art from their echo.
+                                </p>
+                                <p>
+                                    So here I am, back among people, laughing again, thinking again, pretending sometimes, but now aware. Beneath every word I speak, there is a spark from that inferno. And every time I smile, it is not to hide the flame—but to show that I’ve made peace with its warmth.
+                                </p>
+                                <p>
+                                    Because the truth is simple and impossible at once:
+                                    To know oneself is to walk through fire and come out glowing.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Halaman 4: Statistik (Medium-like) --><div id="page4" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>My SHAPE</h1>
+                                <p>The Cartographer of Depth</p>
+                            </div>
+                            <div class="article-body">
+                                
+                                <!-- [PERBAIKAN] Gambar dipindahkan ke atas -->
+                                <img src="gambar_page4.jpg" alt="Gambar Grafik Kinerja" style="margin-top: 0px;">
+
+                                <p style="margin-top: 20px;">
+                                    <strong>Summary</strong>
+                                </p>
+                                <div class="shape-list">
+                                    <p>Core Role: The Cartographer of Depth - a thinker who maps the terrains between logic and feeling, solitude and connection, failure and renewal.</p>
+                                    <p>Mission: To explore the architecture of meaning - designing systems, stories, and reflections that translate the chaos of thought into something quietly resonant.</p>
+                                    <p>Core Strengths: introspection, analytical empathy, emotional endurance, intellectual curiosity, and depth-driven creativity.</p>
+                                    <p>Intended Impact: to build things - whether digital, conceptual, or emotional - that make others pause and understand themselves a little better.</p>
+                                </div>
+                                
+                                <hr style="border-color: #333; margin: 30px 0;">
+
+                                <h2>SHAPE Summary Table</h2>
+                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                                    <thead>
+                                        <tr style="background-color: var(--color-bg-card);">
+                                            <th style="padding: 10px; border: 1px solid #333; text-align: left; color: var(--color-accent);">Dimension</th>
+                                            <th style="padding: 10px; border: 1px solid #333; text-align: left; color: var(--color-accent);">Essence</th>
+                                            <th style="padding: 10px; border: 1px solid #333; text-align: left; color: var(--color-accent);">Keywords</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">S - Signature Strengths</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Curiosity and emotional reflection as instruments of growth</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Learning - Insight - Depth</td>
+                                        </tr>
+                                        <tr style="background-color: var(--color-bg-secondary);">
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">H - Heart</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Integrity, empathy, and longing for authentic connection</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Authenticity - Compassion - Meaning</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">A - Aptitudes</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Analytical and creative synthesis - bridging logic with feeling</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Storytelling - Structure - Design</td>
+                                        </tr>
+                                        <tr style="background-color: var(--color-bg-secondary);">
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">P - Personality</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Contemplative strategist, emotionally attuned, quietly resilient</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Visionary - Grounded - Reflective</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">E - Experiences</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Formed through solitude, challenge, and quiet persistence</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Resilience - Awareness - Transformation</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                
+                                <hr style="border-color: #333; margin: 30px 0;">
+
+                                <h2>1. Signature Strengths (S)</h2>
+                                <p>My strength lies in how I learn: not from manuals, but from moments - often the quiet, unspoken kind. I am not fueled by competition, but by curiosity; not by the desire to know everything, but by the longing to understand why something feels right.</p>
+                                <p>I see learning as an act of meaning-making. I observe, absorb, and then reconstruct. This ability to weave patterns from fragments - emotion, logic, memory - allows me to approach complexity with calm precision.</p>
+                                <p>Resilience is the hidden pillar beneath this curiosity. I have faced disappointment, misdirection, even silence from people and from life itself. Yet, I have never let those pauses define me. Instead, I rebuild - slower, perhaps, but always deeper.</p>
+                                <p>I am not in love with perfection. I am in love with refinement - with the process of revisiting an idea until it finally speaks truth.</p>
+                                <p style="color: var(--color-accent-dark); font-style: italic;">Keywords: reflection - curiosity - resilience - emotional intelligence - meaning-making</p>
+
+                                <h2>2. Heart (H - Values, Passions, and Core Beliefs)</h2>
+                                <p>My compass points toward authenticity. I refuse to wear masks for too long; I would rather be misunderstood for being sincere than praised for being performative. I hold integrity not as a rule, but as rhythm - the pulse that gives life to all that I create.</p>
+                                <p>Empathy is the foundation of my worldview. I see it not as sentimentality but as design: the ability to step into another mind, feel the logic behind their emotion, and translate it into clarity.</p>
+                                <p>I value connection, but I don’t chase it recklessly. I crave the kind that survives silence - the kind built from long conversations, shared metaphors, and the gentle understanding that not everything must be spoken to be known.</p>
+                                <p>Love, for me, is often a study in distance - the ache between wanting to be understood and learning to be at peace with mystery. It is this tension that fuels my creativity: a longing that turns into language.</p>
+                                <p style="color: var(--color-accent-dark); font-style: italic;">Values: authenticity - empathy - depth - responsibility - truth-seeking</p>
+
+
+                                <h2>3. Aptitudes (A - Hard and Soft Skills)</h2>
+                                <p>My unique ability lies in the synthesis between art and system, emotion and clarity. I do not simply “solve problems”; I reinterpret them - understanding how structure can serve meaning.</p>
+                                
+                                <div class="shape-list">
+                                    <p>Hard Skills:</p>
+                                    <ul style="color: var(--color-text-secondary);">
+                                        <li>Conceptual and structural thinking - designing systems, stories, and frameworks that connect abstract ideas</li>
+                                        <li>UI/UX and digital architecture - understanding how logic and emotion shape user experience</li>
+                                        <li>Writing - narrative, reflective, and analytical forms</li>
+                                        <li>Project coordination and design communication</li>
+                                        <li>Data organization and technical reasoning</li>
+                                    </ul>
+                                    <p>Soft Skills:</p>
+                                    <ul style="color: var(--color-text-secondary);">
+                                        <li>Analytical empathy - sensing the structure of people’s thoughts and emotions</li>
+                                        <li>Reflective leadership - guiding through understanding rather than assertion</li>
+                                        <li>Communication - translating complexity into coherence</li>
+                                        <li>Adaptability - adjusting quickly without losing authenticity</li>
+                                    </ul>
+                                </div>
+
+
+                                <h2>4. Personality (P - Work Style & Mindset)</h2>
+                                <p>I live somewhere between the contemplative and the expressive. I enjoy solitude not for isolation but for calibration - it’s where I reorganize the noise into pattern. Yet, when purpose calls, I can be articulate, confident, and collaborative. My creativity is strategic, my logic empathetic. I thrive in environments that value both imagination and discipline - where ideas are not just made, but matured.</p>
+                                <p style="color: var(--color-accent-dark); font-style: italic;">Keywords: contemplative - strategic - adaptable - imaginative - emotionally attuned</p>
+
+                                <h2>5. Experiences (E - Formative Journeys)</h2>
+                                <p>I have learned that failure, when endured with awareness, becomes a curriculum in resilience.</p>
+                                <p>The early semesters of university were a mirror - one that showed me that intelligence without discipline is potential unrealized. I learned to respect consistency, not as punishment, but as structure for growth.</p>
+                                <p>Life has also taught me humility through absence - of recognition, of reciprocation, of certainty. I have been both the architect and the wanderer in my own story, tracing paths that vanish as I step forward. Yet, I’ve discovered beauty even in misdirection.</p>
+                                <p>Every silence has taught me to listen better. Every rejection has clarified what I value. Every unfinished thing has prepared me to finish something that truly matters.</p>
+                                <p style="color: var(--color-accent-dark); font-style: italic;">Themes: growth through struggle - meaning through reflection - creation through longing</p>
+
+                                <hr style="border-color: #333; margin: 30px 0;">
+
+                                <h2>6. Personal Charter (Piagam Diri)</h2>
+                                <p>Mission: To create with consciousness - blending intellect and emotion, structure and art - so that everything I build, design, or write becomes a vessel of understanding.</p>
+                                <p>Core Values: integrity - curiosity - empathy - depth - persistence</p>
+                                <p>Guiding Principles:</p>
+                                <div class="shape-list">
+                                    <ul style="color: var(--color-text-secondary);">
+                                        <li style="color: var(--color-text-primary); margin-bottom: 5px;">Always choose meaning over noise.</li>
+                                        <li style="color: var(--color-text-primary); margin-bottom: 5px;">Let creation be an act of connection, not validation.</li>
+                                        <li style="color: var(--color-text-primary); margin-bottom: 5px;">Seek growth, even when it feels like loss.</li>
+                                        <li style="color: var(--color-text-primary); margin-bottom: 5px;">Protect depth in a world that rewards surface.</li>
+                                        <li style="color: var(--color-text-primary); margin-bottom: 5px;">Stay kind, especially when it’s difficult.</li>
+                                    </ul>
+                                </div>
+                                
+                                <hr style="border-color: #333; margin: 30px 0;">
+                                
+                                <h2>90-Second Narrative</h2>
+                                <blockquote>
+                                    "I am not in a hurry to arrive. I am learning to live as both architect and wanderer - to build meaning while still being shaped by it. My curiosity is my compass, my empathy the map, and my persistence the path. I think deeply, not to complicate, but to clarify. I write, design, and create not to impress, but to translate the emotions people often can’t name. My failures have not broken me; they have made me articulate. My solitude has not isolated me; it has made me observant. My longing has not weakened me; it has given my art its pulse. I am still becoming - and I intend to do so consciously.”
+                                </blockquote>
+
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Halaman 5: Arsip Lama (Medium-like) --><div id="page5" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>Personal Review</h1>
+                                <p>Reflections</p>
+                            </div>
+                            <div class="article-body">
+                                <img src="https://placehold.co/800x400/333333/BB86FC?text=ARSIP+LAMA" alt="[Redacted]">
+                                <p>
+                                    [Redacted].
+                                </p>
+                                <p>
+                                    [Redacted].
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Halaman Tambahan untuk Menu Search dan Collection --><div id="search-page" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>Search</h1>
+                                <p>[Redacted]</p>
+                            </div>
+                            <!-- Menambahkan Riwayat Pencarian --><div id="search-history-content">
+                                <h2>History is [Redacted]</h2>
+                                <div id="history-list" class="section-grid">
+                                    <!-- History items will be inserted here --></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="collection" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>My Album</h1>
+                                <p>[Redacted]</p>
+                            </div>
+                            <!-- Album Grid untuk My Collection (Terhubung ke Galeri Baru) --><div class="content-section" style="padding: 0;">
+                                <h2>[Redacted]</h2>
+                                <div id="collection-grid" class="section-grid">
+                                    <!-- Dynamic content will be loaded here by JavaScript --></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Halaman Galeri Foto Album Riset A --><div id="album-riset-a" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>[Redacted]</h1>
+                                <p>[Redacted]</p>
+                            </div>
+                            <div class="gallery-grid">
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/8c4ac2/ffffff?text=[Redacted]" alt="[Redacted] A1">
+                                    <p>[Redacted]</p>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/BB86FC/ffffff?text=[Redacted]" alt="[Redacted] A2">
+                                    <p>[Redacted]</p>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/3a0050/ffffff?text=[Redacted]" alt="[Redacted] A3">
+                                    <p>[Redacted]</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Halaman Galeri Foto Album Ujian --><div id="album-ujian" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>[Redacted]</h1>
+                                <p>[Redacted]</p>
+                            </div>
+                            <div class="gallery-grid">
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/333333/BB86FC?text=FOTO+UJIAN+1" alt="[Redacted] 1">
+                                    <p>[Redacted]</p>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/555555/BB86FC?text=FOTO+UJIAN+2" alt="[Redacted] 2">
+                                    <p>[Redacted]</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Halaman Galeri Foto Album Inspirasi --><div id="album-inspirasi" class="content-page">
+                        <div class="page-content">
+                            <div class="article-header">
+                                <h1>[Redacted]</h1>
+                                <p>[Redacted]</p>
+                            </div>
+                            <div class="gallery-grid">
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/BB86FC/3a0050?text=INSP+1" alt="[Redacted] 1">
+                                    <p>[Redacted]</p>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/BB86FC/121212?text=INSP+2" alt="[Redacted] 2">
+                                    <p>[Redacted]</p>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/BB86FC/282828?text=INSP+3" alt="[Redacted] 3">
+                                    <p>[Redacted]</p>
+                                </div>
+                                <div class="gallery-item">
+                                    <img src="https://placehold.co/400x300/BB86FC/333333?text=INSP+4" alt="[Redacted] 4">
+                                    <p>[Redacted]</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ======================================= --><!-- JAVASCRIPT UNTUK FUNGSI INTERAKTIF --><!-- ======================================= --><script>
+        const CORRECT_PASSWORD = "jiejie"; // [PERUBAHAN] Password diubah
+        const LOGIN_SCREEN = document.getElementById('login-screen');
+        const HOME_SCREEN = document.getElementById('home-screen');
+        const APP_CONTAINER = document.getElementById('app'); 
+        const PASSWORD_INPUT = document.getElementById('password-input');
+        const ERROR_MESSAGE = document.getElementById('error-message');
+        const DROPDOWN_MENU = document.getElementById('dropdown-menu');
+        const DROPDOWN_TOGGLE = document.getElementById('dropdown-parent');
+        const DROPDOWN_ICON = document.getElementById('dropdown-icon');
+        const CONTENT_PAGES = document.querySelectorAll('.content-page');
+        const SIDEBAR_ITEMS = document.querySelectorAll('.sidebar-item');
+        const PROFILE_DROPDOWN = document.getElementById('profile-dropdown');
+        const SEARCH_HISTORY_KEY = 'searchHistory';
+        
+        // Elemen Tombol Navigasi History
+        const BACK_BTN = document.getElementById('back-btn');
+        const FORWARD_BTN = document.getElementById('forward-btn');
+        
+        // STATE HISTORY
+        let pageHistory = []; // Array untuk menyimpan riwayat kunjungan halaman
+        let historyIndex = -1; // Index halaman saat ini dalam riwayat
+        
+        // Data Album (Menentukan isi New Releases dan My Collection)
+        const albumData = [
+            { id: 'album-riset-a', name: 'Album [Redacted] A', date: '[Redacted] hari lalu', image: 'https://placehold.co/180x180/A020F0/121212?text=R', count: '12 Dok | 4 Foto' },
+            { id: 'album-ujian', name: 'Album [Redacted]', date: '[Redacted] hari lalu', image: 'https://placehold.co/180x180/A020F0/121212?text=U', count: '8 Dok | 1 Foto' },
+            { id: 'album-inspirasi', name: 'Album [Redacted]', date: '[Redacted] minggu lalu', image: 'https://placehold.co/180x180/A020F0/121212?text=I', count: '35 Dok | 10 Foto' },
+        ];
+        
+        // Data yang dapat dicari (digunakan oleh fitur auto-suggest)
+        const searchablePages = [
+            { id: 'page1', name: 'All About Me' },
+            { id: 'page2', name: 'My Song for You' },
+            { id: 'page3', name: 'My Stories for You' },
+            { id: 'page4', name: 'My SHAPE' },
+            { id: 'page5', name: 'Personal Review' },
+            { id: 'home', name: 'Home' },
+            { id: 'search-page', name: 'Search' },
+            { id: 'collection', name: 'My Collection' },
+            { id: 'laporan-page', name: 'Redacted' }, 
+            { id: 'arsip-page', name: 'Redacted' },   
+            ...albumData.map(a => ({ id: a.id, name: a.name })) 
+        ];
+        
+        // --- History Navigation Logic ---
+        function updateHistory(pageId) {
+            // Hapus riwayat "maju" jika kita menavigasi ke halaman baru
+            if (historyIndex < pageHistory.length - 1) {
+                pageHistory = pageHistory.slice(0, historyIndex + 1);
+            }
+            
+            // Tambahkan halaman saat ini, kecuali halaman berulang
+            if (pageHistory[pageHistory.length - 1] !== pageId) {
+                pageHistory.push(pageId);
+                historyIndex = pageHistory.length - 1;
+            } else if (pageHistory.length === 0) {
+                 pageHistory.push(pageId);
+                 historyIndex = 0;
+            }
+            
+            updateNavButtons();
+        }
+
+        function updateNavButtons() {
+            // Tombol Back diaktifkan jika ada halaman sebelumnya
+            if (historyIndex > 0) {
+                BACK_BTN.classList.remove('disabled');
+            } else {
+                BACK_BTN.classList.add('disabled');
+            }
+            
+            // Tombol Forward diaktifkan jika ada halaman di depan
+            if (historyIndex < pageHistory.length - 1) {
+                FORWARD_BTN.classList.remove('disabled');
+            } else {
+                FORWARD_BTN.classList.add('disabled');
+            }
+        }
+
+        function goBack() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                const pageId = pageHistory[historyIndex];
+                // Panggil showPage tanpa memperbarui riwayat (updateHistory = false)
+                showPage(pageId, null, null, false); 
+            }
+        }
+
+        function goForward() {
+            if (historyIndex < pageHistory.length - 1) {
+                historyIndex++;
+                const pageId = pageHistory[historyIndex];
+                // Panggil showPage tanpa memperbarui riwayat (updateHistory = false)
+                showPage(pageId, null, null, false);
+            }
+        }
+
+        // --- Logic Dynamic Content Loading ---
+        function loadDynamicContent() {
+            // 1. Muat Konten New Releases (3 Terbaru)
+            const newReleasesGrid = document.getElementById('new-releases-grid');
+            if (newReleasesGrid) {
+                newReleasesGrid.innerHTML = '';
+                // Menggunakan data Redacted yang sudah di hardcode di HTML (untuk bagian ini kita pertahankan yang lama, tetapi menggunakan albumData untuk konsistensi)
+                albumData.slice(0, 3).forEach(album => {
+                    const card = document.createElement('div');
+                    card.classList.add('release-card');
+                    card.innerHTML = `
+                        <a href="#" onclick="showPage('${album.id}', null, null, true); return false;">
+                            <img src="${album.image}" alt="${album.name}" style="border-radius: 50%;">
+                            <h3 style="color: var(--color-text-primary); margin-top: 5px;">${album.name}</h3>
+                            <p style="color: var(--color-text-secondary); font-size: 0.8em;">${album.date}</p>
+                        </a>
+                    `;
+                    newReleasesGrid.appendChild(card);
+                });
+            }
+            
+            // 2. Muat Konten My Collection (Album Grid)
+            const collectionGrid = document.getElementById('collection-grid');
+            if (collectionGrid) {
+                collectionGrid.innerHTML = '';
+                albumData.forEach(album => {
+                    const card = document.createElement('div');
+                    card.classList.add('album-card');
+                    card.innerHTML = `
+                        <a href="#" onclick="showPage('${album.id}', null, null, true); return false;">
+                            <img src="${album.image}" alt="${album.name}">
+                            <h3 style="color: var(--color-accent);">${album.name}</h3>
+                            <p>${album.count}</p>
+                        </a>
+                    `;
+                    collectionGrid.appendChild(card);
+                });
+            }
+        }
+        
+        // --- Logic Search History ---
+        function getSearchHistory() {
+            try {
+                return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY)) || [];
+            } catch (e) {
+                console.error("Error reading search history:", e);
+                return [];
+            }
+        }
+
+        function saveSearchHistory(query) {
+            let history = getSearchHistory();
+            history = history.filter(item => item !== query);
+            history.unshift(query);
+            history = history.slice(0, 5);
+            localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+        }
+
+        function displaySearchHistory(dropdown) {
+            const historyContainer = dropdown.querySelector('#history-container');
+            historyContainer.innerHTML = '';
+            const history = getSearchHistory();
+            
+            if (history.length === 0) {
+                historyContainer.innerHTML = `<div style="padding: 10px 15px; color: var(--color-text-secondary); font-size: 0.8em;">Belum ada riwayat.</div>`;
+                return;
+            }
+
+            history.forEach(query => {
+                const item = document.createElement('a');
+                item.classList.add('search-result-item');
+                item.textContent = query;
+                item.href = '#';
+                item.onclick = function(e) {
+                    e.preventDefault();
+                    document.getElementById('search-input').value = query;
+                    dropdown.style.display = 'none';
+                };
+                historyContainer.appendChild(item);
+            });
+        }
+
+        // FUNGSI BARU: Toggle Dropdown Profil Kanan Atas
+        function toggleProfileDropdown() {
+            PROFILE_DROPDOWN.classList.toggle('open');
+        }
+
+        // Fungsi Login
+        function login() {
+            if (PASSWORD_INPUT.value === CORRECT_PASSWORD) {
+                LOGIN_SCREEN.style.opacity = '0';
+                setTimeout(() => {
+                    LOGIN_SCREEN.style.display = 'none';
+                    APP_CONTAINER.classList.add('visible');
+                }, 500); 
+                ERROR_MESSAGE.style.display = 'none';
+            } else {
+                ERROR_MESSAGE.style.display = 'block';
+                PASSWORD_INPUT.value = '';
+                PASSWORD_INPUT.style.animation = 'shake 0.3s';
+                setTimeout(() => {
+                    PASSWORD_INPUT.style.animation = '';
+                }, 300);
+            }
+        }
+        
+        // Fungsi Logout (Kembali ke layar login)
+        function logout() {
+             PROFILE_DROPDOWN.classList.remove('open');
+             
+             APP_CONTAINER.classList.remove('visible');
+             setTimeout(() => {
+                 LOGIN_SCREEN.style.display = 'flex';
+                 LOGIN_SCREEN.style.opacity = '1';
+                 PASSWORD_INPUT.value = ''; 
+             }, 500);
+        }
+
+        // Fungsi Dropdown Sidebar
+        function toggleDropdown() {
+            DROPDOWN_MENU.classList.toggle('visible');
+            DROPDOWN_TOGGLE.classList.toggle('open');
+            if (DROPDOWN_MENU.classList.contains('visible')) {
+                DROPDOWN_ICON.classList.remove('fa-angle-right');
+                DROPDOWN_ICON.classList.add('fa-angle-down');
+            } else {
+                DROPDOWN_ICON.classList.remove('fa-angle-down');
+                DROPDOWN_ICON.classList.add('fa-angle-right');
+            }
+        }
+        
+        // Fungsi Navigasi Halaman (SPA)
+        // Tambahkan parameter trackHistory (default true)
+        function showPage(pageId, element, searchQuery = null, trackHistory = true) {
+            // 1. Update History (jika diizinkan)
+            if (trackHistory) {
+                updateHistory(pageId);
+            }
+            
+            // 2. Reset aktif pada semua item sidebar
+            SIDEBAR_ITEMS.forEach(item => item.classList.remove('active'));
+            
+            // 3. Tentukan elemen yang harus diaktifkan
+            let elementToActivate = element;
+            if (!elementToActivate) {
+                elementToActivate = document.querySelector(`[onclick*="showPage('${pageId}'"]`);
+            }
+            
+            // 4. Set aktif pada item yang ditentukan
+            if (elementToActivate) {
+                elementToActivate.classList.add('active');
+            }
+            
+            // 5. Sembunyikan semua konten halaman (dengan style eksplisit)
+            CONTENT_PAGES.forEach(page => {
+                page.classList.remove('active');
+                page.style.display = 'none';
+            });
+
+            // 6. Tampilkan halaman yang diminta (dengan style eksplisit)
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                targetPage.style.display = 'block';
+            }
+            
+            // 7. Jika navigasi berasal dari pencarian, simpan history
+            if (searchQuery) {
+                saveSearchHistory(searchQuery);
+            }
+            
+            // 8. Logika untuk mengaktifkan tab button (Laporan, Arsip)
+            document.querySelectorAll('.content-tabs .tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            if (pageId === 'home') {
+                 document.querySelector('.content-tabs .tab-button:nth-child(1)').classList.add('active');
+            } else if (pageId === 'laporan-page' || pageId === 'page1' || pageId === 'page2' || pageId === 'page3' || pageId === 'page4') {
+                 document.querySelector('.content-tabs .tab-button:nth-child(2)').classList.add('active');
+            } else if (pageId === 'arsip-page' || pageId === 'page5') {
+                 document.querySelector('.content-tabs .tab-button:nth-child(3)').classList.add('active');
+            }
+            
+            // Opsional: Gulir ke atas saat halaman berubah
+            document.getElementById('main-content').scrollTop = 0;
+            
+            // Perbarui status tombol navigasi
+            updateNavButtons();
+        }
+
+        // Fungsi Pencarian Otomatis
+        function searchPages(query) {
+            const dropdown = document.getElementById('search-results-dropdown');
+            const historyContainer = dropdown.querySelector('#history-container');
+            dropdown.innerHTML = '';
+
+            if (query.length < 2) { 
+                dropdown.innerHTML = `<div class="search-history-label" style="padding: 5px 15px; color: var(--color-accent); font-weight: bold; font-size: 0.8em; border-bottom: 1px solid #333;">Riwayat Pencarian</div><div id="history-container"></div>`;
+                displaySearchHistory(dropdown);
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            const lowerQuery = query.toLowerCase();
+            const filteredResults = searchablePages.filter(page => 
+                page.name.toLowerCase().includes(lowerQuery)
+            );
+
+            if (filteredResults.length > 0) {
+                filteredResults.forEach(result => {
+                    const item = document.createElement('a');
+                    item.classList.add('search-result-item');
+                    item.textContent = result.name;
+                    item.href = '#';
+                    item.onclick = function(e) {
+                        e.preventDefault();
+                        
+                        let selector = `[onclick*="showPage('${result.id}'"]`;
+                        const correspondingSidebarItem = document.querySelector(selector);
+                        
+                        // Set trackHistory = true untuk pencarian normal
+                        showPage(result.id, correspondingSidebarItem, result.name, true); 
+                        
+                        dropdown.style.display = 'none'; 
+                        document.getElementById('search-input').value = result.name; 
+                    };
+                    dropdown.appendChild(item);
+                });
+                dropdown.style.display = 'block';
+            } else {
+                const item = document.createElement('div');
+                item.classList.add('search-result-item');
+                item.textContent = 'Tidak ada hasil ditemukan.';
+                item.style.cursor = 'default';
+                item.style.color = 'var(--color-text-secondary)';
+                dropdown.appendChild(item);
+                dropdown.style.display = 'block';
+            }
+        }
+        
+        // Sembunyikan dropdown saat mengklik area lain (kiri dan kanan)
+        document.addEventListener('click', function(e) {
+            const searchBarContainer = document.querySelector('.search-bar-container');
+            const searchDropdown = document.getElementById('search-results-dropdown');
+            if (searchBarContainer && !searchBarContainer.contains(e.target) && searchDropdown.style.display === 'block') {
+                searchDropdown.style.display = 'none';
+            }
+
+            const profileContainer = document.querySelector('.user-profile-container');
+            const profileDropdown = document.getElementById('profile-dropdown');
+            if (profileContainer && !profileContainer.contains(e.target) && profileDropdown.classList.contains('open')) {
+                profileDropdown.classList.remove('open');
+            }
+        });
+
+
+        // JS Utility untuk Shake dan Event Listener
+        const style = document.createElement('style');
+        style.type = 'text/css';
+        style.innerHTML = `
+            @keyframes shake {
+                0% { transform: translateX(0); }
+                20% { transform: translateX(-5px); }
+                40% { transform: translateX(5px); }
+                60% { transform: translateX(-5px); }
+                80% { transform: translateX(5px); }
+                100% { transform: translateX(0); }
+            }
+        `;
+        document.getElementsByTagName('head')[0].appendChild(style);
+
+        PASSWORD_INPUT.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        // Event Listener untuk Enter di Search Bar (jika ingin mencari/navigasi)
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = e.target.value;
+                const match = searchablePages.find(page => page.name.toLowerCase() === query.toLowerCase());
+                if (match) {
+                    const correspondingSidebarItem = document.querySelector(`[onclick*="showPage('${match.id}'"]`);
+                    showPage(match.id, correspondingSidebarItem, query);
+                    document.getElementById('search-results-dropdown').style.display = 'none';
+                }
+            }
+        });
+
+        // Pastikan dropdown terbuka saat halaman dimuat pertama kali (opsional)
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDynamicContent(); // Muat Konten Dinamis saat DOM siap
+            
+            const homeItem = document.querySelector('[onclick="showPage(\'home\', this)"]');
+            showPage('home', homeItem); 
+            
+            document.getElementById('search-input').addEventListener('focus', function() {
+                if (this.value.length === 0) {
+                    searchPages('');
+                }
+            });
+            
+            // Inisialisasi tombol nav pertama kali
+            updateNavButtons(); 
+        });
+        
+    </script>
+</body>
+</html>
