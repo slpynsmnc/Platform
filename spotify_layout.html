@@ -733,6 +733,64 @@
             color: var(--color-text-secondary);
         }
 
+        /* [VAULT PAGE STYLE] */
+        #vault-page .vault-message {
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--color-accent-dark);
+            margin-bottom: 30px;
+        }
+        #vault-page .vault-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+        .vault-item {
+            background-color: var(--color-bg-card);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .vault-item:hover {
+            background-color: #333;
+        }
+        .vault-item i {
+            font-size: 3em;
+            color: var(--color-accent);
+            margin-bottom: 10px;
+        }
+        .vault-item h3 {
+            font-size: 1.1em;
+            color: var(--color-text-primary);
+        }
+        /* Style untuk background gambar kustom pada vault (jika berhasil di-unlock) */
+        #vault-content {
+            position: relative;
+        }
+        #vault-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -30px; /* Offset agar menutupi padding halaman */
+            right: -30px;
+            bottom: 0;
+            /* [BARU] Background foto Vault yang bisa diedit */
+            background-image: url('vault_background.jpg');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1; /* Transparansi agar teks di atasnya mudah dibaca */
+            z-index: -1; 
+            border-radius: 8px;
+        }
+        /* Area akses harus diatur sebagai flex agar input berada di tengah */
+        #vault-access-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
 
     </style>
 </head>
@@ -745,7 +803,7 @@
             <p>Enter the password (pst, it's "jiejie")</p> <!-- Ganti password --><br>
             <i class="fas fa-lock" style="color: var(--color-accent); margin-bottom: 10px;"></i>
             <input type="password" id="password-input" placeholder="Password">
-            <button onclick="login()">MASUK</button>
+            <button onclick="login()">ENTER</button>
             <p id="error-message">Error bruh, try again!</p>
         </div>
     </div>
@@ -788,6 +846,9 @@
                 </div>
                 
                 <hr style="border-color: #333; margin: 10px 0;">
+
+                <!-- [PENAMBAHAN] Menu Vault Baru -->
+                <a href="#" class="sidebar-item" onclick="vaultCheck()"><i class="fas fa-archive"></i> Vault</a>
                 
             </div>
 
@@ -1221,15 +1282,6 @@
                             </div>
                             <div class="article-body">
                                 
-                                <h2 style="color: var(--color-accent);">Refleksi Akhir: The Cartographer's Journey</h2>
-                                <p style="margin-bottom: 30px;">
-                                    Secara keseluruhan, portofolio ini adalah sebuah peta diri yang berhasil memetakan *terrain* internal yang kompleks. Kekuatan utama portofolio ini terletak pada koherensi tematik (Tema *journey* / *becoming*) dan keaslian suara penulis. Anda menggunakan struktur dan logika (seperti di SHAPE dan tabel) bukan untuk membatasi, melainkan untuk membingkai refleksi mendalam.
-                                </p>
-                                <p style="margin-bottom: 30px;">
-                                    Karya ini menunjukkan bahwa Anda tidak takut dengan kompleksitas emosi atau kegagalan, melainkan melihatnya sebagai kurikulum yang membentuk perspektif.
-                                    <strong style="color: var(--color-accent); display: block; margin-top: 10px;">Rata-rata Akhir Portofolio: 4.60</strong>
-                                </p>
-                                
                                 <hr style="border-color: #333; margin: 30px 0;">
 
                                 <h2>1. All About Me</h2>
@@ -1245,7 +1297,7 @@
                                         <tr>
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Refleksi Pribadi</td>
                                             <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-spotify-green);">5</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Esai "All About Me" menyajikan refleksi yang jujur dan mendalam mengenai kontradiksi diri, hasrat akan kesendirian, dan proses penemuan makna. Kutipan di awal (Em Dash) berfungsi sebagai hook yang kuat.</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Esai "All About Me" menyajikan refleksi yang jujur dan mendalam mengenai kontradiksi diri, hasrat akan kesendirian, dan proses penemuan makna.</td>
                                         </tr>
                                         <tr style="background-color: var(--color-bg-secondary);">
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Koherensi Teks</td>
@@ -1283,17 +1335,17 @@
                                         <tr style="background-color: var(--color-bg-secondary);">
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Relevansi Lirik</td>
                                             <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-spotify-green);">5</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Lirik yang disajikan di bawah *player* sangat relevan dengan tema portofolio (perjalanan dan keteguhan). Memberikan *layer* emosional tambahan pada konten.</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Lirik yang disajikan di bawah player sangat relevan dengan tema portofolio (perjalanan dan keteguhan). Memberikan layer emosional tambahan pada konten.</td>
                                         </tr>
                                         <tr>
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Tampilan Visual</td>
                                             <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-accent);">4</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Tampilan *embed* Spotify sangat rapi. Perlu memastikan *custom MP3 player* (lilac) tetap elegan dan tidak mengganggu visual utama.</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Tampilan embed Spotify sangat rapi. Perlu memastikan custom MP3 player (lilac) tetap elegan dan tidak mengganggu visual utama.</td>
                                         </tr>
                                         <tr style="background-color: var(--color-bg-card);">
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-accent);">Rata-rata</td>
                                             <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-accent);">4.67</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-accent);">Implementasi multimedia yang sangat kuat, berhasil menjembatani media *streaming* komersial dan konten lokal.</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-accent);">Implementasi multimedia yang sangat kuat, berhasil menjembatani media streaming komersial dan konten lokal.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1311,7 +1363,7 @@
                                         <tr>
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Kedalaman Naratif</td>
                                             <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-spotify-green);">5</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Esai yang mendeskripsikan 'inner descent' (seperti di *Inferno*) menunjukkan kematangan refleksi diri, memetakan kecemasan, keinginan, dan proses pembaharuan diri.</td>
+                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Esai yang mendeskripsikan 'inner descent' (seperti di Inferno) menunjukkan kematangan refleksi diri, memetakan kecemasan, keinginan, dan proses pembaharuan diri.</td>
                                         </tr>
                                         <tr style="background-color: var(--color-bg-secondary);">
                                             <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Struktur Tulisan</td>
@@ -1364,67 +1416,68 @@
                                     </tbody>
                                 </table>
 
-                                <h2>5. Personal Review</h2>
-                                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-                                    <thead>
-                                        <tr style="background-color: var(--color-bg-card);">
-                                            <th style="padding: 10px; border: 1px solid #333; text-align: left; color: var(--color-accent);">Kriteria</th>
-                                            <th style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-accent);">Skor (1-5)</th>
-                                            <th style="padding: 10px; border: 1px solid #333; text-align: left; color: var(--color-accent);">Deskripsi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Kemampuan Analisis</td>
-                                            <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-accent);">4</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Mampu membedakan ulasan *Peer Review* (Aisyah) dan *Self-Assessment* (Illona).</td>
-                                        </tr>
-                                        <tr style="background-color: var(--color-bg-secondary);">
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Objektivitas</td>
-                                            <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-accent);">4</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Berhasil menyajikan *review* secara kritis namun tetap konstruktif. Perlu memperjelas bagaimana perbandingan antar kedua *review* memengaruhi pemahaman diri sendiri.</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-primary);">Kelengkapan Format</td>
-                                            <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-spotify-green);">5</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-text-secondary);">Struktur presentasi data (skor, kriteria, deskripsi) sangat lengkap dan mudah dipahami.</td>
-                                        </tr>
-                                        <tr style="background-color: var(--color-bg-card);">
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-accent);">Rata-rata</td>
-                                            <td style="padding: 10px; border: 1px solid #333; text-align: center; color: var(--color-accent);">4.33</td>
-                                            <td style="padding: 10px; border: 1px solid #333; color: var(--color-accent);">Review yang solid dan informatif, menunjukkan kemampuan sintesis yang baik.</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
                                 <h3>Refleksi Akhir: The Cartographer's Journey</h3>
                                 <p style="margin-bottom: 30px;">
-                                    Secara keseluruhan, portofolio ini adalah sebuah peta diri yang berhasil memetakan *terrain* internal yang kompleks. Kekuatan utama portofolio ini terletak pada koherensi tematik (Tema *journey* / *becoming*) dan keaslian suara penulis. Anda menggunakan struktur dan logika (seperti di SHAPE dan tabel) bukan untuk membatasi, melainkan untuk membingkai refleksi mendalam.
+                                    Secara keseluruhan, portofolio ini adalah sebuah peta diri yang berhasil memetakan terrain internal yang kompleks. Kekuatan utama portofolio ini terletak pada koherensi tematik (Tema journey/becoming) dan keaslian suara penulis. Anda menggunakan struktur dan logika (seperti di SHAPE dan tabel) bukan untuk membatasi, melainkan untuk membingkai refleksi mendalam.
                                 </p>
                                 <p style="margin-bottom: 30px;">
                                     Karya ini menunjukkan bahwa Anda tidak takut dengan kompleksitas emosi atau kegagalan, melainkan melihatnya sebagai kurikulum yang membentuk perspektif.
-                                    <strong style="color: var(--color-accent); display: block; margin-top: 10px;">Rata-rata Akhir Portofolio: 4.60</strong>
+                                    <strong style="color: var(--color-accent); display: block; margin-top: 10px;">Rata-rata Akhir Portofolio: 4.75</strong>
                                 </p>
 
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Halaman 5: Arsip Lama (Medium-like) --><div id="page5" class="content-page">
+                    <!-- [PENAMBAHAN HALAMAN VAULT] -->
+                    <div id="vault-page" class="content-page">
                         <div class="page-content">
                             <div class="article-header">
-                                <h1>Personal Review</h1>
-                                <p>Sejarah dan Refleksi</p>
+                                <h1>The Vault</h1>
+                                <p>A safe place for private memories and data. Requires access authentication.</p>
                             </div>
-                            <div class="article-body">
-                                <img src="https://placehold.co/800x400/333333/BB86FC?text=ARSIP+LAMA" alt="Gambar Arsip">
-                                <p>
-                                    Proyek tahun 2020 ini merupakan titik balik penting yang membentuk metodologi riset kita saat ini. Walaupun hasilnya sudah usang, studi kasus dari proyek ini masih menjadi bahan referensi utama bagi tim baru.
+
+                            <div id="vault-access-area">
+                                <p style="text-align: center; color: var(--color-accent);">
+                                    Enter the Vault's password.
                                 </p>
-                                <p>
-                                    Dokumen arsip lengkap tersedia dalam format PDF di jaringan internal.
-                                </p>
+                                <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+                                    <input type="password" id="vault-password-input" placeholder="Password Vault" style="width: 250px; padding: 10px; border-radius: 6px; border: 1px solid var(--color-accent-dark); background-color: var(--color-bg-secondary); color: var(--color-text-primary); margin-right: 10px;">
+                                    <button onclick="unlockVault('vault-page')" style="background-color: var(--color-accent); color: var(--color-bg-primary); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold;">Unlock</button>
+                                </div>
+                                <p id="vault-error-message" style="text-align: center; color: #ff4d4d; display: none;">Password salah. Akses ditolak.</p>
                             </div>
+
+                            <div id="vault-content" style="display: none;">
+                                <!-- Area Teks yang Dapat Diedit (Dipisahkan oleh Border) -->
+                                <div class="vault-message">
+                                    <h2 style="color: var(--color-accent); font-size: 1.5em; margin-bottom: 10px;">About You:</h2>
+                                    <p contenteditable="true" style="border: 1px solid var(--color-accent-dark); padding: 15px; background-color: var(--color-bg-secondary); border-radius: 4px; min-height: 100px; color: var(--color-text-primary);">
+                                        I'm not good with words. This is all the things in my head that i can't say out loud. 
+                                    </p>
+                                </div>
+
+                                <h2>Secret Files</h2>
+                                <div class="vault-grid">
+                                    <div class="vault-item">
+                                        <i class="fas fa-file-invoice"></i>
+                                        <h3>First Meet</h3>
+                                    </div>
+                                    <div class="vault-item">
+                                        <i class="fas fa-key"></i>
+                                        <h3>[redacted]]</h3>
+                                    </div>
+                                    <div class="vault-item">
+                                        <i class="fas fa-user-secret"></i>
+                                        <h3>[redacted]]</h3>
+                                    </div>
+                                    <div class="vault-item">
+                                        <i class="fas fa-map-marked-alt"></i>
+                                        <h3>[redacted]]</h3>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
@@ -1487,11 +1540,11 @@
                             </div>
                             <div class="gallery-grid">
                                 <div class="gallery-item">
-                                    <img src="https://placehold.co/400x300/333333/BB86FC?text=FOTO+UJIAN+1" alt="[Redacted] 1">
+                                    <img src="https://placehold.co/400x300/333333/BB86FC?text=FOTO+[Redacted]+1" alt="[Redacted] 1">
                                     <p>[Redacted]</p>
                                 </div>
                                 <div class="gallery-item">
-                                    <img src="https://placehold.co/400x300/555555/BB86FC?text=FOTO+UJIAN+2" alt="[Redacted] 2">
+                                    <img src="https://placehold.co/400x300/555555/BB86FC?text=FOTO+[Redacted]+2" alt="[Redacted] 2">
                                     <p>[Redacted]</p>
                                 </div>
                             </div>
@@ -1506,19 +1559,19 @@
                             </div>
                             <div class="gallery-grid">
                                 <div class="gallery-item">
-                                    <img src="https://placehold.co/400x300/BB86FC/3a0050?text=INSP+1" alt="[Redacted] 1">
+                                    <img src="https://placehold.co/400x300/BB86FC/3a0050?text=[Redacted]+1" alt="[Redacted] 1">
                                     <p>[Redacted]</p>
                                 </div>
                                 <div class="gallery-item">
-                                    <img src="https://placehold.co/400x300/BB86FC/121212?text=INSP+2" alt="[Redacted] 2">
+                                    <img src="https://placehold.co/400x300/BB86FC/121212?text=[Redacted]+2" alt="[Redacted] 2">
                                     <p>[Redacted]</p>
                                 </div>
                                 <div class="gallery-item">
-                                    <img src="https://placehold.co/400x300/BB86FC/282828?text=INSP+3" alt="[Redacted] 3">
+                                    <img src="https://placehold.co/400x300/BB86FC/282828?text=[Redacted]+3" alt="[Redacted] 3">
                                     <p>[Redacted]</p>
                                 </div>
                                 <div class="gallery-item">
-                                    <img src="https://placehold.co/400x300/BB86FC/333333?text=INSP+4" alt="[Redacted] 4">
+                                    <img src="https://placehold.co/400x300/BB86FC/333333?text=[Redacted]+4" alt="[Redacted] 4">
                                     <p>[Redacted]</p>
                                 </div>
                             </div>
@@ -1532,6 +1585,7 @@
     
     <!-- ======================================= --><!-- JAVASCRIPT UNTUK FUNGSI INTERAKTIF --><!-- ======================================= --><script>
         const CORRECT_PASSWORD = "jiejie"; // [PERUBAHAN] Password diubah
+        const VAULT_PASSWORD = "veronica"; // [PENAMBAHAN] Password baru untuk Vault
         const LOGIN_SCREEN = document.getElementById('login-screen');
         const HOME_SCREEN = document.getElementById('home-screen');
         const APP_CONTAINER = document.getElementById('app'); 
@@ -1575,6 +1629,46 @@
             ...albumData.map(a => ({ id: a.id, name: a.name })) 
         ];
         
+        // --- Logic Vault Check ---
+        function unlockVault(pageId) {
+            const input = document.getElementById('vault-password-input');
+            const content = document.getElementById('vault-content');
+            const errorMsg = document.getElementById('vault-error-message');
+            
+            if (input.value === VAULT_PASSWORD) { // Menggunakan VAULT_PASSWORD yang baru
+                content.style.display = 'block';
+                document.getElementById('vault-access-area').style.display = 'none';
+                errorMsg.style.display = 'none';
+                // Lacak histori hanya saat vault dibuka
+                // Perlu memanggil showPage ulang untuk memastikan halaman aktif dan historinya benar
+                showPage(pageId, document.querySelector('[onclick*="vaultCheck()"]'), null, true);
+            } else {
+                errorMsg.style.display = 'block';
+                input.value = '';
+            }
+        }
+
+        // Fungsionalitas Vault yang hanya menampilkan area input password
+        function vaultCheck() {
+            showPage('vault-page', document.querySelector('[onclick*="vaultCheck()"]'), null, true);
+            const content = document.getElementById('vault-content');
+            const accessArea = document.getElementById('vault-access-area');
+            const input = document.getElementById('vault-password-input');
+
+            content.style.display = 'none';
+            accessArea.style.display = 'flex';
+            input.value = '';
+            document.getElementById('vault-error-message').style.display = 'none';
+
+            // Menambahkan event listener Enter untuk password vault
+            input.onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    unlockVault('vault-page');
+                }
+            };
+        }
+
         // --- History Navigation Logic ---
         function updateHistory(pageId) {
             // Hapus riwayat "maju" jika kita menavigasi ke halaman baru
